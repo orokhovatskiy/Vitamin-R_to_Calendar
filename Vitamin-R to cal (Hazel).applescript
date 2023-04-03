@@ -10,6 +10,10 @@ In Hazel I have three rules:
 	"01.Creating TXT-copy" Creating TXT copy of RTFD log-file of Vitamin-R 4 by shell-script: command: textutil -convert txt "$1"
 	"02.Create counter file" Creating counter-file for log-file. We need it because when you add new event to Vitamin-R log - you should understanding when you finished. I have shell checker for Hazel + easy shell-script in action that create empty counter file
 	"03.Parse TXT-file and create event in Fantastical" Parsing TXT log-file and creating events in Fantastical. IMPORTANT: for new day you will find events in Fantastical since second record because of Hazel Match checker.	
+	
+Changelog:
+	v.1.1 - Add parsing tags in objects. Tags using for understanding to which calendar create event. Also did code a little bit easier
+	v.1.0 - Initial script
 *)
 
 -- Define variables
@@ -17,6 +21,13 @@ set objectiveData to "" -- Saving filtering parameters that I want to extract fo
 set LastLineInLogThatAdded to "" -- Saving parsing position and start parsing since the saved anchor
 set FileCounterVALUE to ""
 set CounterFileSumPath to ""
+set objective to ""
+set tags to ""
+set actualDuration to ""
+set startDate to ""
+
+-- Debug-path. Uncomment it to use path to specific log instead of use it in Hazel
+-- set theFile to "Users:orokhovatskiy:Library:Containers:net.publicspace.mas.vitaminr4:Data:Library:Application Support:Vitamin-R 4:System Logs:System Log Day 2023-04-03 (bcd0745ec37c).txt"
 
 -- Read the counter-file and placen when we finished before
 set CounterFileSumPath to theFile & ".count" as text -- Concatenate theFile variable from Hazel (it gives full path to the file that Hazel works with)
@@ -38,7 +49,14 @@ repeat with i from 1 to count timeSlices
 		if timeSlice contains "#objective" then
 			set i to i + 1
 			set timeSlice to item i of timeSlices
-			set objectiveData to objectiveData & timeSlice & " for "
+			set objective to timeSlice
+		end if
+		
+		-- Extract tags from the time slice
+		if timeSlice contains "#tags" then
+			set i to i + 1
+			set timeSlice to item i of timeSlices
+			set tags to timeSlice
 		end if
 		
 		-- Extract the duration from the time slice
@@ -46,15 +64,16 @@ repeat with i from 1 to count timeSlices
 			set i to i + 1
 			set timeSlice to item i of timeSlices
 			set timeSlice to timeSlice / 60
-			set objectiveData to objectiveData & timeSlice & " min since "
+			set actualDuration to timeSlice
 		end if
 		
 		-- Extract the date from the time slice
 		if timeSlice contains "#startDate" then
 			set i to i + 1
 			set timeSlice to item i of timeSlices
-			set objectiveData to objectiveData & timeSlice & return
+			set startDate to timeSlice
 		end if
+		set objectiveData to "/" & tags & " for " & actualDuration & " min " & objective & " " & startDate
 	end if
 	set MaximumLinesInLog to i
 end repeat
@@ -73,6 +92,7 @@ set timeSlices to paragraphs of objectiveData
 
 repeat with i from 1 to count timeSlices
 	set object to item i of timeSlices
+	-- display dialog object -- Debug command to check what Fantastical will get
 	tell application "Fantastical"
 		parse sentence object with add immediately
 	end tell
