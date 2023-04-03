@@ -45,7 +45,7 @@ repeat with i from 1 to count timeSlices
 		if timeSlice contains "#actualDuration" then
 			set i to i + 1
 			set timeSlice to item i of timeSlices
-			set timeSlice to timeSlice
+			set timeSlice to timeSlice / 60
 			set objectiveData to objectiveData & timeSlice & " min since "
 		end if
 		
